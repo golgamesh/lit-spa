@@ -1,0 +1,53 @@
+import { AadHttpClient, AadHttpClientFactory, IHttpClientOptions as IAadHttpClientOptions } from '@microsoft/sp-http';
+import AdapterBase from './AdapterBase';
+import { HttpVerb, IFetchAdapterRequestConfig, IHttpClientOptions, IHttpOptions } from './Model';
+
+const clientConfig = AadHttpClient.configurations.v1;
+
+//const options: IAadHttpClientOptions = {};
+
+export default class SpfxAadClientAdapter extends AdapterBase {
+    constructor(options: IHttpClientOptions, protected client: AadHttpClient) {
+        super(options);
+    }
+
+    protected async _fetch(requestInfo: IFetchAdapterRequestConfig): Promise<Response> {
+        let response: Response;
+        response = await this.client.fetch(requestInfo.url, clientConfig, requestInfo) as any;
+        if(!response.ok) {
+            const httpError = await this._assembleError(response);
+            throw httpError;
+        }
+        return response;
+
+    }
+    
+    protected _adaptOptions(options: IHttpOptions, method?: HttpVerb | string, url?: string, body?: string): IFetchAdapterRequestConfig {
+        const headers = {
+            ...this._options.headers,
+            ...options.headers,
+        }
+        const reqInfo = {
+            headers: headers,
+            method: method,
+            signal: options.signal,
+            body: body ? JSON.stringify(body) : undefined,
+            url: url,
+            //credentials: "omit",
+        };
+
+        return reqInfo as any;
+        /* 
+        const req = <IFetchAdapterRequestConfig> new Request(options.url as any, reqInfo);
+        req.retryCount = options.retryCount as any;
+        return req; */
+    }
+
+}
+
+export async function SpfxAadClientAdapterFactory(options: IHttpClientOptions, client: AadHttpClient): Promise<SpfxAadClientAdapter> {
+    const adapter = new SpfxAadClientAdapter(options, client);
+    await adapter.init();
+
+    return adapter;
+}
