@@ -3,7 +3,8 @@ import {customElement, property, state} from 'lit/decorators.js';
 import { consume } from '@lit/context';
 import { contextMovieData } from '../controllers/Context';
 import MovieData, { IMovie } from '../data/MovieData';
-import 'data-grid-component';
+import '../components/data-grid';
+import { Config, html as cellHtml } from 'gridjs';
 
 @customElement('page-movies')
 export class PageMovies extends LitElement {
@@ -18,6 +19,27 @@ export class PageMovies extends LitElement {
     @state()
     results: IMovie[] = [];
 
+    @state()
+    gridConfig: Config = {} as any;
+
+    connectedCallback(): void {
+        this.setConfig();
+        super.connectedCallback();
+    }
+
+    setConfig() {
+        this.gridConfig = {
+            columns: [
+                { name: "Title" },
+                { name: "Year" },
+                { name: "imdbID" },
+                { name: "Type" },
+                { name: "Poster", formatter: (cell) => cellHtml(`<img src="${cell}">`) },
+            ],
+            data: this.results.map(m => [m.Title, m.Year, m.imdbID, m.Type, m.Poster])
+        } as any;
+    }
+
     render() {
         return html`
             <h2>Movies</h2>
@@ -26,7 +48,7 @@ export class PageMovies extends LitElement {
                 <sl-button @click=${this.onSearchClick}>Search</sl-button>
             </div>
             <div>
-                <data-grid ></data-grid>
+                <data-grid .config=${this.gridConfig}></data-grid>
             </div>
             <div>
                 <textarea 
@@ -45,6 +67,7 @@ export class PageMovies extends LitElement {
 
     onSearchClick = async (e: Event) => {
         this.results = await this.movieData.fetchMovieSearch(this.searchKey);
+        this.setConfig();
     }
 
     static styles = css`

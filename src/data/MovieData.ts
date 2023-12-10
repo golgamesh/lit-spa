@@ -14,6 +14,12 @@ import {
 const ApiKey = "391a2fbc";
 const CorsProxyHost = "https://corsproxy.io";
 
+export interface IResponse<T> {
+    Response: string;
+    Search: T[];
+    totalResults: string;
+}
+
 export interface IMovie { 
     
     Title: string;
@@ -48,7 +54,8 @@ export default class MovieData {
 
     async fetchMovieSearch(key?: string): Promise<IMovie[]> {
     
-        return this.data.req('').param('s', key).get();
+        const response = await this.data.req('').param('s', key).get<IResponse<IMovie>>();
+        return response.Search;
 
     }
 
